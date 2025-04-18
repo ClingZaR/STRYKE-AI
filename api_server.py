@@ -66,19 +66,9 @@ lime_explainer = lime_tabular.LimeTabularExplainer(
 )
 
 # ✅ Categorical mappings
-label_maps = {
-    "gender": {"Male": 1, "Female": 0, "Other": 2},
-    "ever_married": {"Yes": 1, "No": 0},
-    "Residence_type": {"Urban": 1, "Rural": 0},
-    "work_type": {
-        "Private": 2, "Self-employed": 3, "Govt_job": 0,
-        "children": 1, "Never_worked": 4
-    },
-    "smoking_status": {
-        "formerly smoked": 1, "never smoked": 2,
-        "smokes": 3, "Unknown": 0
-    }
-}
+# ✅ Load label encoders
+label_encoders = joblib.load("artifacts/label_encoders.pkl")
+
 
 # ✅ Correct scaler: use real data, not SMOTE-resampled
 scale_columns = ["age", "avg_glucose_level", "bmi"]
@@ -87,26 +77,40 @@ raw_df = raw_df.copy()
 raw_df["bmi"].fillna(raw_df["bmi"].median(), inplace=True)
 raw_df["smoking_status"].fillna("Unknown", inplace=True)
 
-scaler = MinMaxScaler()
-scaler.fit(raw_df[scale_columns])
+def get_bmi_category(bmi):
+    if bmi < 18.5:
+        return "Underweight"
+    elif 18.5 <= bmi < 25:
+        return "Normal"
+    elif 25 <= bmi < 30:
+        return "Overweight"
+    else:
+        return "Obese"
+
 
 scaler = MinMaxScaler()
 scaler.fit(raw_df[scale_columns])
 
 # ✅ Input preprocessing
-def preprocess_input(data: dict) -> pd.DataFrame:
+def preprocess_input(data: dict):
     processed = data.copy()
-    for col, mapping in label_maps.items():
-        processed[col] = mapping.get(processed[col], 0)
+    for col in label_encoders:
+        processed[col] = label_encoders[col].transform([processed[col]])[0]
 
     df_input = pd.DataFrame([processed], columns=feature_columns)
     df_input[scale_columns] = scaler.transform(df_input[scale_columns])
-    return df_input
+
+    # Restore original BMI to categorize
+    original_bmi = data["bmi"]
+    bmi_category = get_bmi_category(original_bmi)
+
+    return df_input, bmi_category
+
 
 # ✅ Prediction endpoint
 @app.post("/predict")
 def predict_risk(input_data: InputData):
-    input_df = preprocess_input(input_data.dict())
+    input_df, bmi_category = preprocess_input(input_data.dict())
     y_prob = float(model.predict_proba(input_df)[0][1])
     y_pred = int(y_prob >= 0.40)
 
@@ -120,5 +124,6 @@ def predict_risk(input_data: InputData):
         "risk_score": round(y_prob, 4),
         "prediction": y_pred,
         "model": "catboost-optuna",
+        "bmi_category": bmi_category,
         "lime_explanation": explanation
     }
