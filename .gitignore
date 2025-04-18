@@ -1,0 +1,31 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+venv/
+env/
+
+# Data & models
+*.pkl
+*.joblib
+*.csv
+*.xlsx
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Jupyter / Colab
+.ipynb_checkpoints/
+
+# IDEs
+.vscode/
+.idea/
+
+# FastAPI static cache
+static/*.html
