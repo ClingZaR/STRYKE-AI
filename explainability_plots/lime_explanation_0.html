@@ -37089,25 +37089,25 @@
 /***/ })
 /******/ ]);
 //# sourceMappingURL=bundle.js.map </script></head><body>
-        <div class="lime top_div" id="top_divB4ATDP0P4HN17LO"></div>
+        <div class="lime top_div" id="top_divNSN6BAVUUXRROJO"></div>
         
         <script>
-        var top_div = d3.select('#top_divB4ATDP0P4HN17LO').classed('lime top_div', true);
+        var top_div = d3.select('#top_divNSN6BAVUUXRROJO').classed('lime top_div', true);
         
             var pp_div = top_div.append('div')
                                 .classed('lime predict_proba', true);
             var pp_svg = pp_div.append('svg').style('width', '100%');
-            var pp = new lime.PredictProba(pp_svg, ["No Stroke", "Stroke"], [0.865161017277773, 0.13483898272222702]);
+            var pp = new lime.PredictProba(pp_svg, ["No Event", "Event"], [0.9917675923026213, 0.008232407697378657]);
             
         
         var exp_div;
-            var exp = new lime.Explanation(["No Stroke", "Stroke"]);
+            var exp = new lime.Explanation(["No Event", "Event"]);
         
                 exp_div = top_div.append('div').classed('lime explanation', true);
-                exp.show([["age <= 0.51", -0.4274224822051329], ["0.34 < bmi <= 0.44", 0.01841174690985531], ["heart_disease <= 0.00", 0.016536622935812765], ["0.00 < gender <= 1.00", -0.013889903405625452], ["hypertension <= 0.00", -0.008118960520100313], ["work_type <= 1.00", 0.0047521181454184104], ["1.00 < smoking_status <= 2.00", 0.0036061718055518037], ["0.00 < Residence_type <= 1.00", -0.0028080969516245985], ["0.12 < avg_glucose_level <= 0.21", 0.0016358661139390831], ["ever_married <= 1.00", 0.0]], 1, exp_div);
+                exp.show([["age <= 0.51", -0.5117590819353235], ["0.34 < bmi <= 0.44", 0.0843949909533085], ["heart_disease <= 0.00", 0.07762820044331216], ["0.00 < gender <= 1.00", -0.06230865724889188], ["0.12 < avg_glucose_level <= 0.21", 0.026240984205430952], ["1.00 < smoking_status <= 2.00", -0.016263028027673154], ["0.00 < Residence_type <= 1.00", -0.01570849020210379], ["hypertension <= 0.00", -0.014465107425882672], ["work_type <= 1.00", 0.013471622831654938], ["ever_married <= 1.00", 0.0]], 1, exp_div);
                 
         var raw_div = top_div.append('div');
-            exp.show_raw_tabular([["age", "0.30", -0.4274224822051329], ["bmi", "0.36", 0.01841174690985531], ["heart_disease", "0.00", 0.016536622935812765], ["gender", "1.00", -0.013889903405625452], ["hypertension", "0.00", -0.008118960520100313], ["work_type", "1.00", 0.0047521181454184104], ["smoking_status", "2.00", 0.0036061718055518037], ["Residence_type", "1.00", -0.0028080969516245985], ["avg_glucose_level", "0.16", 0.0016358661139390831], ["ever_married", "1.00", 0.0]], 1, raw_div);
+            exp.show_raw_tabular([["age", "0.30", -0.5117590819353235], ["bmi", "0.36", 0.0843949909533085], ["heart_disease", "0.00", 0.07762820044331216], ["gender", "1.00", -0.06230865724889188], ["avg_glucose_level", "0.16", 0.026240984205430952], ["smoking_status", "2.00", -0.016263028027673154], ["Residence_type", "1.00", -0.01570849020210379], ["hypertension", "0.00", -0.014465107425882672], ["work_type", "1.00", 0.013471622831654938], ["ever_married", "1.00", 0.0]], 1, raw_div);
         
         </script>
         </body></html>

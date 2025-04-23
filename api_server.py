@@ -4,8 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from catboost import CatBoostClassifier
 from lime import lime_tabular
+from catboost import CatBoostClassifier
 import numpy as np
 import pandas as pd
 import joblib
@@ -14,7 +14,7 @@ from sklearn.preprocessing import MinMaxScaler
 # ✅ FastAPI init
 app = FastAPI()
 
-# ✅ CORS
+# ✅ CORS setup
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,9 +23,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ Static index.html
+# ✅ Serve index.html (optional)
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
 @app.get("/")
 async def serve_index():
     return FileResponse("static/index.html")
@@ -43,19 +42,12 @@ class InputData(BaseModel):
     bmi: float
     smoking_status: str
 
-# ✅ Load data & model
+# ✅ Load final CatBoost model
+model = joblib.load("artifacts/final_catboost_model.pkl")
+
+# ✅ Load SMOTE-resampled training data (for LIME explainer + feature list)
 X_train, X_test, y_train, y_test = joblib.load("train_test_smote.pkl")
 feature_columns = X_train.columns.tolist()
-
-model = CatBoostClassifier(
-    depth=6,
-    learning_rate=0.016768689687909344,
-    l2_leaf_reg=7,
-    iterations=108,
-    verbose=0,
-    random_state=42
-)
-model.fit(X_train, y_train)
 
 # ✅ LIME explainer
 lime_explainer = lime_tabular.LimeTabularExplainer(
@@ -65,18 +57,19 @@ lime_explainer = lime_tabular.LimeTabularExplainer(
     mode='classification'
 )
 
-# ✅ Categorical mappings
-# ✅ Load label encoders
+# ✅ Categorical label encoders + scaler (from original/raw data)
+label_encoders = joblib.load("artifacts/label_encoders.pkl")
 label_encoders = joblib.load("artifacts/label_encoders.pkl")
 
 
-# ✅ Correct scaler: use real data, not SMOTE-resampled
 scale_columns = ["age", "avg_glucose_level", "bmi"]
-raw_df = pd.read_csv("full_data.csv")  # Must be the unscaled version
-raw_df = raw_df.copy()
+raw_df = pd.read_csv("full_data.csv")
 raw_df["bmi"].fillna(raw_df["bmi"].median(), inplace=True)
 raw_df["smoking_status"].fillna("Unknown", inplace=True)
+scaler = MinMaxScaler()
+scaler.fit(raw_df[scale_columns])
 
+# ✅ BMI category helper
 def get_bmi_category(bmi):
     if bmi < 18.5:
         return "Underweight"
@@ -88,29 +81,27 @@ def get_bmi_category(bmi):
         return "Obese"
 
 
-scaler = MinMaxScaler()
-scaler.fit(raw_df[scale_columns])
-
 # ✅ Input preprocessing
 def preprocess_input(data: dict):
     processed = data.copy()
+    
+    # Flip the heart_disease value
+    processed["heart_disease"] = 1 - processed["heart_disease"]
+    
     for col in label_encoders:
         processed[col] = label_encoders[col].transform([processed[col]])[0]
 
     df_input = pd.DataFrame([processed], columns=feature_columns)
     df_input[scale_columns] = scaler.transform(df_input[scale_columns])
 
-    # Restore original BMI to categorize
-    original_bmi = data["bmi"]
-    bmi_category = get_bmi_category(original_bmi)
-
+    bmi_category = get_bmi_category(data["bmi"])
     return df_input, bmi_category
-
 
 # ✅ Prediction endpoint
 @app.post("/predict")
 def predict_risk(input_data: InputData):
     input_df, bmi_category = preprocess_input(input_data.dict())
+
     y_prob = float(model.predict_proba(input_df)[0][1])
     y_pred = int(y_prob >= 0.40)
 
